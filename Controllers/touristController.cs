@@ -1,7 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using smr.Entitis;
+using smr.Core.Services;
 
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace smr.Controllers
 {
@@ -9,62 +9,69 @@ namespace smr.Controllers
     [ApiController]
     public class touristController : ControllerBase
     {
-        private readonly DataContext _Context;
-        public touristController(DataContext context)
+        private readonly ItouirstService _touristService;
+        public touristController(ItouirstService customerService)
         {
-            _Context = context;
+            _touristService = customerService;
         }
-        public static List<Tourist> tourists = new List<Tourist>
-        {
-            new Tourist { id = "1", phonNumber = "0548416230", isActive = true },
-            new Tourist { id = "2", phonNumber = "0548487645", isActive = false }
-        };
 
-        // GET: api/<touristControllercs>
+
+        // GET: api/customers
         [HttpGet]
-        public IEnumerable<Tourist> Get()
+        public ActionResult Get()
         {
-            return tourists;
+            return Ok(_touristService.GetList());
         }
 
-
-        // GET api/<touristControllercs>/5
+        // GET: api/customers/{id}
         [HttpGet("{id}")]
-        public ActionResult<Tourist> GetById(string id)
+        public ActionResult GetById(string id)
         {
+            var touirst = _touristService.GetById(id);
+            if (touirst != null)
+            {
+                return Ok(touirst);
+            }
+            return NotFound();
 
-            var renter = tourists.Find(x => x.id == id);
-            if (renter != null)
-            {
-                return Ok(renter);
-            }
-            else
-            {
-                return NotFound(renter);
-            }
         }
-
-        // POST api/<touristControllercs>
+        // POST api/<customersController>
         [HttpPost]
-        public Tourist Post([FromBody] Tourist value)
+        public ActionResult Post([FromBody] Tourist value)
         {
-            tourists.Add(new Tourist { id = value.id, phonNumber = value.phonNumber, isActive = value.isActive });
-            return value;
+            var touirst = _touristService.GetById(value.id);
+            if (touirst != null)
+            {
+                return Conflict();
+            }
+            _touristService.Add(value);
+            return Ok(); ;
         }
 
-        // PUT api/<touristControllercs>/5
+        // PUT: api/customers/{id}
         [HttpPut("{id}")]
-        public ActionResult Put(string id, bool isActive)
+        public ActionResult Put(string id, Tourist value)
         {
-            var index = tourists.FindIndex(e => e.id == id);
-            if (index == -1)
+            var touirst = _touristService.Put(id, value);
+            if (touirst == null)
             {
-                return NotFound();
+                return Conflict();
             }
-            tourists[index].isActive = isActive;
+           
             return Ok();
         }
-
-
+        // PUT api/customers/status/5
+        [HttpPut("status/{id}")]
+        public ActionResult Put(string id, bool isActive)
+        {
+            var touirst = _touristService.GetById(id);
+            if (touirst == null)
+            {
+                return Conflict();
+            }
+            _touristService.PutStatus(id, isActive);
+            return Ok();
+        }
     }
 }
+

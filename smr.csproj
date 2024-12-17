@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\smr.Data\smr.Data.csproj" />
+    <ProjectReference Include="..\smr.Service\smr.Service.csproj" />
   </ItemGroup>
 
 </Project>
