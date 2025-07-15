@@ -1,32 +1,41 @@
 ﻿using smr.Core.Services;
 using Microsoft.AspNetCore.Mvc;
 using smr.Entitis;
-
+using AutoMapper;
+using smr.Core.DTOs;
+using smr.Models;
+using Microsoft.AspNetCore.Authorization;
 
 namespace smr.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
+    [Authorize(Roles ="renter")]
     public class renterController : ControllerBase
     {
         private readonly IrenterService _renterService;
-        public renterController(IrenterService renterService)
+        private readonly IMapper _mapper;
+        public renterController(IrenterService renterService, IMapper map)
         {
             _renterService = renterService;
+            _mapper = map;
         }
-       
+
         // GET: api/<renterController>
         [HttpGet]
-        public ActionResult Get()
+        public async Task<ActionResult> Get()
         {
-            return Ok(_renterService.GetList());
+            var rentersList = await _renterService.GetListAsync();
+            var renters = _mapper.Map<IEnumerable<renterDTO>>(rentersList);
+            return Ok(renters);
         }
         // GET api/<renterController>/5
         [HttpGet("{id}")]
-        public ActionResult GetById(string id)
+        public async Task<ActionResult> GetById(string id)
         {
-            var renter = _renterService.GetById(id);
-            if (renter != null)
+            var rent = await _renterService.GetByIdAsync(id);
+            var renter = _mapper.Map<renterDTO>(rent);
+            if (rent != null)
             {
                 return Ok(renter);
             }
@@ -36,41 +45,41 @@ namespace smr.Controllers
 
         // POST api/<renterController>
         [HttpPost]
-        public ActionResult Post([FromBody] Renter value)
+        public async Task<ActionResult> Post([FromBody] renterPostModel r)
         {
-            var renter = _renterService.GetById(value.id);
-            if (renter != null)
+            var NewRenter = _mapper.Map<Renter>(r);
+            var rent = _renterService.GetByIdAsync(NewRenter.id);
+            if (rent == null)
             {
                 return Conflict();
             }
-            _renterService.Add(value);
+            await _renterService.AddAsync(NewRenter);
             return Ok(); ;
         }
 
         // PUT api/<renterController>/5
         [HttpPut("{id}")]
-        public ActionResult Put(string id, Renter value)
+        public async Task<ActionResult> Put(string id, [FromBody] renterPostModel r)
         {
-            var renter = _renterService.GetById(id);
-            if (renter == null)
+            var NewRenter = await _renterService.UpdateAsync(id, _mapper.Map<Renter>(r));
+            if (NewRenter != null)
             {
-                return Conflict();
+                return Ok(NewRenter);
             }
-            _renterService.Put(value);
-            return Ok();
+            return NotFound();
         }
         // PUT api/<bankersController>/status/5
         [HttpPut("status/{id}")]
-        public ActionResult Put(string id, bool isActive)
+        public async Task<ActionResult> Put(string id, bool isActive)
         {
-            var renter = _renterService.GetById(id);
+            var renter = await _renterService.GetByIdAsync(id);
             if (renter == null)
             {
                 return Conflict();
             }
-            _renterService.PutStatus(id, isActive);
+            await _renterService.PutStatusAsync(id, isActive);
             return Ok();
         }
-      
+
     }
 }
